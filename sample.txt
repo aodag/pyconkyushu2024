@@ -1,0 +1,40 @@
+html simple APIでのサンプル
+
+Looking in links: http://127.0.0.1:5000
+Collecting pyramid==2.0.2
+  Downloading http://127.0.0.1:5000/files/pyramid-2.0.2-py3-none-any.whl.metadata (20 kB)
+Collecting hupper>=1.5 (from pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/hupper-1.12.1-py3-none-any.whl.metadata (3.7 kB)
+Collecting plaster (from pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/plaster-1.1.2-py2.py3-none-any.whl.metadata (6.4 kB)
+Collecting plaster-pastedeploy (from pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/plaster_pastedeploy-1.0.1-py2.py3-none-any.whl.metadata (8.1 kB)
+Requirement already satisfied: setuptools in ./.venv/lib/python3.11/site-packages (from pyramid==2.0.2) (65.5.0)
+Collecting translationstring>=0.4 (from pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/translationstring-1.4-py2.py3-none-any.whl.metadata (4.1 kB)
+Collecting venusian>=1.0 (from pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/venusian-3.1.0-py3-none-any.whl.metadata (10 kB)
+Collecting webob>=1.8.3 (from pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/WebOb-1.8.7-py2.py3-none-any.whl.metadata (10 kB)
+Collecting zope.deprecation>=3.5.0 (from pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/zope.deprecation-5.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting zope.interface>=3.8.0 (from pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/zope.interface-6.3-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (42 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 42.0/42.0 kB 276.3 MB/s eta 0:00:00
+Collecting PasteDeploy>=2.0 (from plaster-pastedeploy->pyramid==2.0.2)
+  Downloading http://127.0.0.1:5000/files/PasteDeploy-3.1.0-py3-none-any.whl.metadata (2.7 kB)
+Downloading http://127.0.0.1:5000/files/pyramid-2.0.2-py3-none-any.whl (247 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 247.3/247.3 kB 630.1 MB/s eta 0:00:00
+Downloading http://127.0.0.1:5000/files/hupper-1.12.1-py3-none-any.whl (22 kB)
+Downloading http://127.0.0.1:5000/files/translationstring-1.4-py2.py3-none-any.whl (15 kB)
+Downloading http://127.0.0.1:5000/files/venusian-3.1.0-py3-none-any.whl (13 kB)
+Downloading http://127.0.0.1:5000/files/WebOb-1.8.7-py2.py3-none-any.whl (114 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 115.0/115.0 kB 540.5 MB/s eta 0:00:00
+Downloading http://127.0.0.1:5000/files/zope.deprecation-5.0-py3-none-any.whl (10 kB)
+Downloading http://127.0.0.1:5000/files/zope.interface-6.3-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (249 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 249.4/249.4 kB 665.7 MB/s eta 0:00:00
+Downloading http://127.0.0.1:5000/files/plaster-1.1.2-py2.py3-none-any.whl (11 kB)
+Downloading http://127.0.0.1:5000/files/plaster_pastedeploy-1.0.1-py2.py3-none-any.whl (7.8 kB)
+Downloading http://127.0.0.1:5000/files/PasteDeploy-3.1.0-py3-none-any.whl (16 kB)
+Installing collected packages: translationstring, zope.interface, zope.deprecation, webob, venusian, plaster, PasteDeploy, hupper, plaster-pastedeploy, pyramid
+Successfully installed PasteDeploy-3.1.0 hupper-1.12.1 plaster-1.1.2 plaster-pastedeploy-1.0.1 pyramid-2.0.2 translationstring-1.4 venusian-3.1.0 webob-1.8.7 zope.deprecation-5.0 zope.interface-6.3

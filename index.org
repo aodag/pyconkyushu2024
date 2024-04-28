@@ -1,0 +1,102 @@
+#+title: パッケージを配ろう
+#+author: Atsushi Odagiri
+#+DATE: 2024-04-25
+#+BEAMER_THEME: Madrid
+#+BEAMER_COLOR_THEME: beetle
+#+OPTIONS: H:2 toc:t num:t
+#+OPTIONS: ^:{}
+#+LaTeX_CLASS: beamer
+#+LaTeX_HEADER: \usepackage{luatexja}
+#+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
+* パッケージを配ろう
+** お前誰よ
+***  
+:PROPERTIES:
+:BEAEMER_COL: 0.48
+:BEAMER_ENV: block
+:END:
+   - Atsushi Odagiri
+   - Open Collector
+   - Pythonは1.5くらいのころから
+
+*** 
+:PROPERTIES:
+:BEAEMER_COL: 0.48
+:BEAMER_ENV: block
+:END:
+
+#+ATTR_LATEX: :width 2cm
+[[./r-penta512.png]]
+
+#+ATTR_LATEX: :width 2cm
+[[./oc-logo.png]]
+#+ATTR_LATEX: :width 2cm
+[[./logo-w.png]]
+* パッケージを配るということ
+** パッケージを配るということ
+- 広く一般に向けて配る
+- 狭い範囲で限られた利用のために配る
+** 広く一般に向けてpypiで配る
+- PyPAツールのデフォルト
+- ~tween~ でアップロード
+- ~pip~ がダウンロードしてインストール
+** 狭い範囲で限られた利用のために配る
+- マイクロサービスのそれぞれて使うようなライブラリ
+* パッケージを配るためのPEP
+** パッケージを配るためのPEP
+- [[https://peps.python.org/pep-0458][PEP 458 – Secure PyPI downloads with signed repository metadata]]
+- [[https://peps.python.org/pep-0480][PEP 480 – Surviving a Compromise of PyPI: End-to-end signing of packages]]
+- [[https://peps.python.org/pep-0503/][PEP 503 – Simple Repository API]]
+- [[https://peps.python.org/pep-0592][PEP 592 – Adding “Yank” Support to the Simple API]]
+- [[https://peps.python.org/pep-0629][PEP 629 – Versioning PyPI’s Simple API]]
+- [[https://peps.python.org/pep-0658][PEP 658 – Serve Distribution Metadata in the Simple Repository API]]
+- [[https://peps.python.org/pep-0691][PEP 691 – JSON-based Simple API for Python Package Indexes]]
+- [[https://peps.python.org/pep-0700][PEP 700 – Additional Fields for the Simple API for Package Indexes]]
+- [[https://peps.python.org/pep-0714][PEP 714 – Rename dist-info-metadata in the Simple API]]
+** Simple Repository
+** Metadata
+- wheelの中にある ~Metadata~
+** JSON
+- やることが多い!
+** PyPIのSimple Repository
+- https://pypi.org/simple/ とても大きいのでアクセス注意！
+** pipでsimple repositoryを使う
+
+* 実践package repository
+** httplib.server でのお手軽repository
+- ダウンロードできるリンクがあればいいので ~http~ モジュールでサーバーを起動するだけ
+- wheelファイルのあるディレクトリで実行
+
+#+begin_src shell
+  python3 -m pip download pyramid
+  python3 -m http.server
+  pip install pyramid -f http://localhost:8000/ --no-index
+#+end_src
+
+[[./http-server-simple-repository.png]]
+
+** wsgi app
+** pypi version
+
+** metadata
+- METADATAをwheelから取り出す
+#+begin_src python
+  def get_metadata(whl: pathlib.Path):
+      parts = whl.name.split("-")
+      dist_name, version = parts[0], parts[1]
+      metadata_path = f"{dist_name}-{version}.dist-info/METADATA"
+      with zipfile.ZipFile(whl) as zf:
+          with zf.open(metadata_path) as metadata:
+              return metadata.read()
+
+#+end_src
+** jsonに対応
+- project list
+- project detail
+** The Update Framework
+- TUF
+
+* 参考文献
+** 参考文献
+- PyPA Simple Repository API, https://packaging.python.org/en/latest/specifications/simple-repository-api/
+- The Update Framework, https://theupdateframework.io/
