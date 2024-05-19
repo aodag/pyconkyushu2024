@@ -33,15 +33,35 @@
 #+ATTR_LATEX: :width 2cm
 [[./logo-w.png]]
 * パッケージを配るということ
+** パッケージエコシステム
+
+- 作る
+- 配る
+- 使う
+
 ** パッケージを配るということ
+
 - 広く一般に向けて配る
 - 狭い範囲で限られた利用のために配る
+
 ** 広く一般に向けてpypiで配る
+
 - PyPAツールのデフォルト
 - ~tween~ でアップロード
 - ~pip~ がダウンロードしてインストール
+
 ** 狭い範囲で限られた利用のために配る
+
 - マイクロサービスのそれぞれて使うようなライブラリ
+- 特殊なパッチをあてたローカルフレーバーライブラリ
+
+** 狭い範囲で配る
+
+- 社内ネットワークやVPNの中で
+- k8sやvpcの中で
+- 範囲内のIPアドレスにだけ
+- 認証をつけたい
+
 * パッケージを配るためのPEP
 ** パッケージを配るためのPEP
 - [[https://peps.python.org/pep-0458][PEP 458 – Secure PyPI downloads with signed repository metadata]]
@@ -76,7 +96,21 @@
 [[./http-server-simple-repository.png]]
 
 ** wsgi app
+
+- webアプリケーションにする
+- DBなどを使わず起動するだけで使える
+
+** wheelファイルを探しだす
+
+- wheelファイルのファイル名は形式が決まっている
+  ~{distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-{platform tag}.whl.~
+
 ** pypi version
+
+- 今回はv1.0の範囲でやってみます
+
+  - PEP691 v1.0
+  - PEP714 v1.1
 
 ** metadata
 - METADATAをwheelから取り出す
@@ -91,8 +125,69 @@
 
 #+end_src
 ** jsonに対応
+
 - project list
 - project detail
+
+** project list
+
+- v1.0は ~name~ のみ
+
+#+begin_src python
+  Project = TypedDict("Project", {"name": str})
+  ProjectList = TypedDict(
+      "ProjectList",
+      {
+          "meta": Meta,
+          "projects": list[Project],
+      },
+  )
+
+#+end_src
+
+** project detail
+
+#+begin_src python
+  ProjectDetail = TypedDict(
+      "ProjectDetail",
+      {
+          "name": str,
+          "files": list[ProjectFile],
+          "meta": Meta,
+      },
+  )
+
+#+end_src
+
+** project file
+
+- すごく情報量が増えた
+
+#+begin_src python
+  ProjectFile = TypedDict(
+      "ProjectFile",
+      {
+          "filename": str,
+          "url": str,
+          "hashes": dict[str, str],
+          "requires-python": NotRequired[str],
+          "dist-info-metadata": NotRequired[str],
+          "gpg-sig": NotRequired[bool],
+          "yanked": NotRequired[bool],
+      },
+  )
+
+#+end_src
+** pipから使う
+
+- project list呼ばれてないかも？
+
+** find-links vs index-url
+
+#+begin_example
+$ pip install pyramid --index-url=http://localhost:8000/
+#+end_example
+
 ** The Update Framework
 - TUF
 
