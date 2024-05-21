@@ -105,7 +105,7 @@ class PackageRepository:
             for w in set([whl.split("-", 1)[0] for whl in self.wheels])
         ]
 
-    def get_data(self, whl) -> bytes:
+    def get_data(self, whl: str) -> bytes:
         with self.wheels[whl]["data"].open("br") as f:
             return f.read()
 
@@ -266,7 +266,7 @@ def main():
     parser.add_argument("--port", default=5000, type=int)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("wheels", type=pathlib.Path)
-
+    parser.add_argument("--api-type", choices=("json", "html"), default="json")
     args = parser.parse_args()
 
     if args.debug:
@@ -279,25 +279,31 @@ def main():
         for w in args.wheels.glob("*.whl")
     }
     repo = PackageRepository(wheels)
-    htmlapp = RegexDispatch(
-        [
-            (re.compile("^/$"), ProjectsApp(repo)),
-            (re.compile("^/files/(?P<wheel_name>.*.whl)$"), WheelApp(repo)),
-            (re.compile("^/files/(?P<wheel_name>.*.whl).metadata$"), MetadataApp(repo)),
-        ]
-    )
-    jsonapp = RegexDispatch(
-        [
-            (re.compile("^/$"), JsonProjectsApp(repo)),
-            (re.compile("^/(?P<project_name>.*)/$"), JsonProjectDetailApp(repo)),
-            (
-                re.compile("^/(?P<project_name>.*)/files/(?P<wheel_name>.*.whl)$"),
-                WheelApp(repo),
-            ),
-        ]
-    )
+    app: WSGIApplication
+    if args.api_type == "html":
+        app = RegexDispatch(
+            [
+                (re.compile("^/$"), ProjectsApp(repo)),
+                (re.compile("^/files/(?P<wheel_name>.*.whl)$"), WheelApp(repo)),
+                (
+                    re.compile("^/files/(?P<wheel_name>.*.whl).metadata$"),
+                    MetadataApp(repo),
+                ),
+            ]
+        )
+    else:
+        app = RegexDispatch(
+            [
+                (re.compile("^/$"), JsonProjectsApp(repo)),
+                (re.compile("^/(?P<project_name>.*)/$"), JsonProjectDetailApp(repo)),
+                (
+                    re.compile("^/(?P<project_name>.*)/files/(?P<wheel_name>.*.whl)$"),
+                    WheelApp(repo),
+                ),
+            ]
+        )
 
-    httpd = simple_server.make_server(args.host, args.port, jsonapp)
+    httpd = simple_server.make_server(args.host, args.port, app)
     httpd.serve_forever()
 
 

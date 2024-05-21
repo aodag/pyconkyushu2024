@@ -97,9 +97,15 @@
 
 ** wsgi app
 
-- webアプリケーションにする
+- 標準ライブラリでいこう
+  - Batteries Included!
+- 1ファイルデプロイ
 - DBなどを使わず起動するだけで使える
 
+** 標準ライブラリでwebアプリケーションを書く
+
+- wsgiアプリケーション
+- wsgiref
 ** wheelファイルを探しだす
 
 - wheelファイルのファイル名は形式が決まっている
@@ -112,6 +118,10 @@
   - PEP691 v1.0
   - PEP714 v1.1
 
+#+begin_src html
+  <meta name="pypi:repository-version" content="1.0">
+#+end_src
+
 ** metadata
 - METADATAをwheelから取り出す
 #+begin_src python
@@ -122,6 +132,36 @@
       with zipfile.ZipFile(whl) as zf:
           with zf.open(metadata_path) as metadata:
               return metadata.read()
+
+#+end_src
+
+** ダウンロードURL
+#+begin_src python
+              [b"<ul>"]
+              + [
+                  f'<li><a href="/files/{w}" data-dist-info-metadata="{w}.metadata">{w}</a></li>'.encode(
+                      "utf8"
+                  )
+                  for w in self.repo.wheels
+              ]
+              + [b"</ul>"]
+
+#+end_src
+** ダウンロード
+- wheelファイルの中身をレスポンスボディにする
+- wheelのcontent-typeは特に決まってないので ~application/octet-stream~ にする
+- ブラウザでアクセスしたときにダウンロードになるよう ~Content-Disposition~ をつける
+#+begin_src python
+      def get_data(self, whl: str) -> bytes:
+          with self.wheels[whl]["data"].open("br") as f:
+              return f.read()
+
+#+end_src
+#+begin_src python
+      def __call__(self, environ, start_response) -> Iterable[bytes]:
+          whl = environ["wsgiorg.routing_args"][1]["wheel_name"]
+          start_response("200 OK", [("Content-type", "application/octet-stream")])
+          return [self.repo.get_data(whl)]
 
 #+end_src
 ** jsonに対応
