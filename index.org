@@ -80,7 +80,6 @@
 - やることが多い!
 ** PyPIのSimple Repository
 - https://pypi.org/simple/ とても大きいのでアクセス注意！
-** pipでsimple repositoryを使う
 
 * 実践package repository
 ** httplib.server でのお手軽repository
@@ -95,7 +94,29 @@
 
 [[./http-server-simple-repository.png]]
 
-** wsgi app
+** find-links
+
+全てをお手軽repositoryから取得するなら ~no-index~ も使うようにしてみよう
+
+- ~no-index~ pypiなどのindexを見にいかない
+- ~find-url~ 指定したページからダウンロードURLをスクレーピング
+
+** indexは必要？
+
+- pipを直接使うなら ~find-url~ でもいいかも？
+- メタデータを取得するのに配布物をダウンロードするという効率の悪さはある
+- ~poetry source add~ で使えるのは simple repository
+  - pipだと ~--index-url~ で指定するものに相当
+
+
+* simple repository
+
+** simple repository
+
+- パッケージごとに ~/{project}~ を取得してダウンロードURLやメタデータを取得
+- JSON APIでさらに取得できる情報が増えた
+
+** 実装方針
 
 - 標準ライブラリでいこう
   - Batteries Included!
@@ -106,10 +127,12 @@
 
 - wsgiアプリケーション
 - wsgiref
+
 ** wheelファイルを探しだす
 
 - wheelファイルのファイル名は形式が決まっている
-  ~{distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-{platform tag}.whl.~
+  - PEP 491 ? The Wheel Binary Package Format 1.9
+  - ~{distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-{platform tag}.whl.~
 
 ** pypi version
 
@@ -121,7 +144,13 @@
 #+begin_src html
   <meta name="pypi:repository-version" content="1.0">
 #+end_src
-
+#+begin_src js
+  {
+    "meta": {
+      "api-version": "1.0"
+    }
+  }
+#+end_src
 ** metadata
 - METADATAをwheelから取り出す
 #+begin_src python
@@ -222,7 +251,6 @@
 
 - project list呼ばれてないかも？
 
-** find-links vs index-url
 
 #+begin_example
 $ pip install pyramid --index-url=http://localhost:8000/
