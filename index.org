@@ -62,26 +62,6 @@
 - 範囲内のIPアドレスにだけ
 - 認証をつけたい
 
-* パッケージを配るためのPEP
-** パッケージを配るためのPEP
-- [[https://peps.python.org/pep-0458][PEP 458 – Secure PyPI downloads with signed repository metadata]]
-- [[https://peps.python.org/pep-0480][PEP 480 – Surviving a Compromise of PyPI: End-to-end signing of packages]]
-- [[https://peps.python.org/pep-0503/][PEP 503 – Simple Repository API]]
-- [[https://peps.python.org/pep-0592][PEP 592 – Adding “Yank” Support to the Simple API]]
-- [[https://peps.python.org/pep-0629][PEP 629 – Versioning PyPI’s Simple API]]
-- [[https://peps.python.org/pep-0658][PEP 658 – Serve Distribution Metadata in the Simple Repository API]]
-- [[https://peps.python.org/pep-0691][PEP 691 – JSON-based Simple API for Python Package Indexes]]
-- [[https://peps.python.org/pep-0700][PEP 700 – Additional Fields for the Simple API for Package Indexes]]
-- [[https://peps.python.org/pep-0714][PEP 714 – Rename dist-info-metadata in the Simple API]]
-** Simple Repository
-** Metadata
-- wheelの中にある ~Metadata~
-** JSON
-- やることが多い!
-** PyPIのSimple Repository
-- https://pypi.org/simple/ とても大きいのでアクセス注意！
-
-* 実践package repository
 ** httplib.server でのお手軽repository
 - ダウンロードできるリンクがあればいいので ~http~ モジュールでサーバーを起動するだけ
 - wheelファイルのあるディレクトリで実行
@@ -89,14 +69,41 @@
 #+begin_src shell
   python3 -m pip download pyramid
   python3 -m http.server
-  pip install pyramid -f http://localhost:8000/ --no-index
 #+end_src
 
 [[./http-server-simple-repository.png]]
 
+** URL指定でインストール
+
+- pipはURL指定で直接インストールできる
+- 正確なファイル名を知らないといけない
+- wheelはプラットフォームなどの情報を含んでいる
+
+#+begin_src shell
+    pip install \
+        http://localhost:8000/pyramid-2.0.2-py3-none-any.whl
+#+end_src
+
+** 複雑なwheelファイル名
+- oh...
+#+begin_example
+zope.interface-6.4
+-cp311
+-cp311
+-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64
+.whl
+#+end_example
 ** find-links
 
-全てをお手軽repositoryから取得するなら ~no-index~ も使うようにしてみよう
+- ~find-links~ で指定した場所から探しだしてもらう
+#+begin_src shell
+  pip install -f http://localhost:8000 zope.interface
+#+end_src
+
+** no-index
+
+- 場合によってはpypiへの接続も制限される環境
+- 全てをお手軽repositoryから取得するなら ~no-index~ も使うようにしてみよう
 
 - ~no-index~ pypiなどのindexを見にいかない
 - ~find-url~ 指定したページからダウンロードURLをスクレーピング
@@ -108,13 +115,46 @@
 - ~poetry source add~ で使えるのは simple repository
   - pipだと ~--index-url~ で指定するものに相当
 
+** 独自のpypiを立てたい!
 
-* simple repository
+- PyPI自体のソースコードは公開されている
+  - https://github.com/pypi/warehouse
+  - インフラ構築保守など手間もかかる
+- devpi
+  - https://github.com/devpi/devpi
+  - PyPIへのプロキシやプロジェクトごとの名前空間設定など多機能
+  - それなりにインフラ構築保守の手間がかかる
+- ~http.server~ くらいに簡単に立ち上って欲しいところ
 
-** simple repository
+* パッケージを配るためのPEP
+** パッケージを配るためのPEP
+- [[https://peps.python.org/pep-0458][PEP 458 – Secure PyPI downloads with signed repository metadata]]
+- [[https://peps.python.org/pep-0480][PEP 480 – Surviving a Compromise of PyPI: End-to-end signing of packages]]
+- [[https://peps.python.org/pep-0503/][PEP 503 – Simple Repository API]]
+- [[https://peps.python.org/pep-0592][PEP 592 – Adding “Yank” Support to the Simple API]]
+- [[https://peps.python.org/pep-0629][PEP 629 – Versioning PyPI’s Simple API]]
+- [[https://peps.python.org/pep-0658][PEP 658 – Serve Distribution Metadata in the Simple Repository API]]
+- [[https://peps.python.org/pep-0691][PEP 691 – JSON-based Simple API for Python Package Indexes]]
+- [[https://peps.python.org/pep-0700][PEP 700 – Additional Fields for the Simple API for Package Indexes]]
+- [[https://peps.python.org/pep-0714][PEP 714 – Rename dist-info-metadata in the Simple API]]
 
-- パッケージごとに ~/{project}~ を取得してダウンロードURLやメタデータを取得
-- JSON APIでさらに取得できる情報が増えた
+** Simple Repository
+
+representation
+
+- HTML PEP503
+- JSON PEP691
+
+バージョン
+- 1.0 PEP503/PEP691
+- 1.1 PEP700
+- PEP714 メタデータフィールドの取り扱いについての修正
+  - warehouseの実装で間違えがあったらしい
+
+** PyPIのSimple Repository
+
+- https://pypi.org/simple/ とても大きいのでアクセス注意！
+
 
 ** 実装方針
 
@@ -125,82 +165,23 @@
 
 ** 標準ライブラリでwebアプリケーションを書く
 
-- wsgiアプリケーション
+- json
 - wsgiref
 
-** wheelファイルを探しだす
+** simple repositoryの機能
 
-- wheelファイルのファイル名は形式が決まっている
-  - PEP 491 ? The Wheel Binary Package Format 1.9
-  - ~{distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-{platform tag}.whl.~
-
-** pypi version
-
-- 今回はv1.0の範囲でやってみます
-
-  - PEP691 v1.0
-  - PEP714 v1.1
-
-#+begin_src html
-  <meta name="pypi:repository-version" content="1.0">
-#+end_src
-#+begin_src js
-  {
-    "meta": {
-      "api-version": "1.0"
-    }
-  }
-#+end_src
-** metadata
-- METADATAをwheelから取り出す
-#+begin_src python
-  def get_metadata(whl: pathlib.Path):
-      parts = whl.name.split("-")
-      dist_name, version = parts[0], parts[1]
-      metadata_path = f"{dist_name}-{version}.dist-info/METADATA"
-      with zipfile.ZipFile(whl) as zf:
-          with zf.open(metadata_path) as metadata:
-              return metadata.read()
-
-#+end_src
-
-** ダウンロードURL
-#+begin_src python
-              [b"<ul>"]
-              + [
-                  f'<li><a href="/files/{w}" data-dist-info-metadata="{w}.metadata">{w}</a></li>'.encode(
-                      "utf8"
-                  )
-                  for w in self.repo.wheels
-              ]
-              + [b"</ul>"]
-
-#+end_src
-** ダウンロード
-- wheelファイルの中身をレスポンスボディにする
-- wheelのcontent-typeは特に決まってないので ~application/octet-stream~ にする
-- ブラウザでアクセスしたときにダウンロードになるよう ~Content-Disposition~ をつける
-#+begin_src python
-      def get_data(self, whl: str) -> bytes:
-          with self.wheels[whl]["data"].open("br") as f:
-              return f.read()
-
-#+end_src
-#+begin_src python
-      def __call__(self, environ, start_response) -> Iterable[bytes]:
-          whl = environ["wsgiorg.routing_args"][1]["wheel_name"]
-          start_response("200 OK", [("Content-type", "application/octet-stream")])
-          return [self.repo.get_data(whl)]
-
-#+end_src
-** jsonに対応
-
-- project list
-- project detail
+- これだけ!
+  - ~/~ project list
+  - ~/{project}~ project detail
+  - 実際にwheelファイルをダウンロードするURL
+    - 今回は ~/{project}/files/{wheel}~ にします
 
 ** project list
 
-- v1.0は ~name~ のみ
+- ホストしているプロジェクト(ほぼパッケージの意味)を一覧で出すだけ
+- v1.0のプロジェクトに関する情報は ~name~ のみ
+
+** project list のtyping
 
 #+begin_src python
   Project = TypedDict("Project", {"name": str})
@@ -216,6 +197,11 @@
 
 ** project detail
 
+- プロジェクト(パッケージ)ごとのダウンロード可能なファイル一覧
+- ファイルのURLやパッケージメタデータなど
+
+** project detailのtyping
+
 #+begin_src python
   ProjectDetail = TypedDict(
       "ProjectDetail",
@@ -228,9 +214,7 @@
 
 #+end_src
 
-** project file
-
-- すごく情報量が増えた
+** project fileのtyping
 
 #+begin_src python
   ProjectFile = TypedDict(
@@ -245,6 +229,90 @@
           "yanked": NotRequired[bool],
       },
   )
+
+#+end_src
+
+
+** pypi version
+
+- 今回はv1.0の範囲でやってみます
+
+#+begin_src js
+  {
+    "meta": {
+      "api-version": "1.0"
+    }
+  }
+#+end_src
+
+** wheelファイルを探しだす
+
+- pathlibでできちゃうね!
+
+** wheelファイル名から情報を取得
+
+- wheelファイルのファイル名は形式が決まっている
+  - PEP 491 The Wheel Binary Package Format 1.9
+  - ~{distribution}-{version}(-{build tag})?-{python tag}-{abi tag}-{platform tag}.whl.~
+
+** wheelファイル名から情報を取得
+- 今回欲しいのは ~distiribution~
+- ~"-"~ で ~split~ して最初の1つ
+
+#+begin_src python
+  whl = "zope.interface-6.4.post0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl"
+  whl.split("-", 1)[0] == "zope.interface"
+#+end_src
+
+** プロジェクト名を正規化
+
+- PEP 503 で正式に正規化方法が定義されている
+- アルファベットは全て小文字
+- 記号は ~-~ に正規化
+- 例: ~zope.interface~ -> ~zope-interface~
+
+#+begin_src python
+  import re
+
+  def normalize(name):
+      return re.sub(r"[-_.]+", "-", name).lower()
+#+end_src
+
+** metadata
+- METADATAをwheelから取り出す
+- wheelはzipファイル
+- METADATAの場所は決まっている
+  - PEP 491 The Wheel Binary Package Format 1.9
+  - ~{distribution}-{version}.dist-info/~ contains metadata.
+
+#+begin_src python
+  def get_metadata(whl: pathlib.Path):
+      parts = whl.name.split("-")
+      dist_name, version = parts[0], parts[1]
+      metadata_path = f"{dist_name}-{version}.dist-info/METADATA"
+      with zipfile.ZipFile(whl) as zf:
+          with zf.open(metadata_path) as metadata:
+              return metadata.read()
+
+#+end_src
+
+** プロジェクトごとにファイル情報をまとめてJSON APIにする
+
+** ダウンロード
+- wheelファイルの中身をレスポンスボディにする
+- wheelのcontent-typeは特に決まってないので ~application/octet-stream~ にする
+- ブラウザでアクセスしたときにダウンロードになるよう ~Content-Disposition~ をつける
+#+begin_src python
+      def get_data(self, whl: str) -> bytes:
+          with self.wheels[whl]["data"].open("br") as f:
+              return f.read()
+
+#+end_src
+#+begin_src python
+      def __call__(self, environ, start_response) -> Iterable[bytes]:
+          whl = environ["wsgiorg.routing_args"][1]["wheel_name"]
+          start_response("200 OK", [("Content-type", "application/octet-stream")])
+          return [self.repo.get_data(whl)]
 
 #+end_src
 ** pipから使う
