@@ -168,31 +168,42 @@ representation
 - json
 - wsgiref
 
-** simple repositoryの機能
-
-- これだけ!
-  - ~/~ project list
-  - ~/{project}~ project detail
-  - 実際にwheelファイルをダウンロードするURL
-    - 今回は ~/{project}/files/{wheel}~ にします
-
 ** project list
 
 - ホストしているプロジェクト(ほぼパッケージの意味)を一覧で出すだけ
 - v1.0のプロジェクトに関する情報は ~name~ のみ
 
-** project list のtyping
+** 使うライブラリ
 
-#+begin_src python
-  Project = TypedDict("Project", {"name": str})
-  ProjectList = TypedDict(
-      "ProjectList",
+- これだけ!
+- 100% 標準ライブラリのみ!
+
+#+begin_src python :tangle micropypiapp.py
+import argparse
+import hashlib
+import itertools
+import json
+import operator
+import pathlib
+import re
+import zipfile
+from typing import TypedDict, NotRequired, Iterable
+from wsgiref.types import WSGIApplication, WSGIEnvironment, StartResponse
+from wsgiref.simple_server import make_server
+#+end_src
+
+** Meta
+
+- simple repositoryに関する情報
+- バージョン
+
+#+begin_src python :tangle micropypiapp.py
+  Meta = TypedDict(
+      "Meta",
       {
-          "meta": Meta,
-          "projects": list[Project],
+          "api-version": str,
       },
   )
-
 #+end_src
 
 ** project detail
@@ -200,23 +211,12 @@ representation
 - プロジェクト(パッケージ)ごとのダウンロード可能なファイル一覧
 - ファイルのURLやパッケージメタデータなど
 
-** project detailのtyping
-
-#+begin_src python
-  ProjectDetail = TypedDict(
-      "ProjectDetail",
-      {
-          "name": str,
-          "files": list[ProjectFile],
-          "meta": Meta,
-      },
-  )
-
-#+end_src
-
 ** project fileのtyping
 
-#+begin_src python
+- 事前に確認可能なパッケージメタデータ
+- ダウンロードに必要な情報 URLやハッシュ
+
+#+begin_src python :tangle micropypiapp.py
   ProjectFile = TypedDict(
       "ProjectFile",
       {
@@ -231,23 +231,44 @@ representation
   )
 
 #+end_src
+  
+** project detailのtyping
 
+- project fileの一覧が主な情報
 
-** pypi version
+#+begin_src python :tangle micropypiapp.py
+  ProjectDetail = TypedDict(
+      "ProjectDetail",
+      {
+          "name": str,
+          "files": list[ProjectFile],
+          "meta": Meta,
+      },
+  )
 
-- 今回はv1.0の範囲でやってみます
+#+end_src
 
-#+begin_src js
-  {
-    "meta": {
-      "api-version": "1.0"
-    }
-  }
+** project list のtyping
+
+#+begin_src python :tangle micropypiapp.py
+  Project = TypedDict("Project", {"name": str})
+  ProjectList = TypedDict(
+      "ProjectList",
+      {
+          "meta": Meta,
+          "projects": list[Project],
+      },
+  )
+
 #+end_src
 
 ** wheelファイルを探しだす
 
 - pathlibでできちゃうね!
+
+#+begin_src python
+  wheelhouse.glob("*.whl")
+#+end_src
 
 ** wheelファイル名から情報を取得
 
@@ -259,9 +280,9 @@ representation
 - 今回欲しいのは ~distiribution~
 - ~"-"~ で ~split~ して最初の1つ
 
-#+begin_src python
-  whl = "zope.interface-6.4.post0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl"
-  whl.split("-", 1)[0] == "zope.interface"
+#+begin_src python :tangle micropypiapp.py
+  def extract_dist_name(wh: pathlib.Path) -> str:
+      return wh.name.split("-", 1)[0]
 #+end_src
 
 ** プロジェクト名を正規化
@@ -271,10 +292,8 @@ representation
 - 記号は ~-~ に正規化
 - 例: ~zope.interface~ -> ~zope-interface~
 
-#+begin_src python
-  import re
-
-  def normalize(name):
+#+begin_src python :tangle micropypiapp.py
+  def normalize(name: str) -> str:
       return re.sub(r"[-_.]+", "-", name).lower()
 #+end_src
 
@@ -285,7 +304,7 @@ representation
   - PEP 491 The Wheel Binary Package Format 1.9
   - ~{distribution}-{version}.dist-info/~ contains metadata.
 
-#+begin_src python
+#+begin_src python :tangle micropypiapp.py
   def get_metadata(whl: pathlib.Path):
       parts = whl.name.split("-")
       dist_name, version = parts[0], parts[1]
@@ -296,25 +315,219 @@ representation
 
 #+end_src
 
-** プロジェクトごとにファイル情報をまとめてJSON APIにする
+** 全部まとめてwheelファイルの情報を取得
 
-** ダウンロード
+- プロジェクト名をキーにしてメタデータとwheelファイルパスをグルーピング
+
+#+begin_src python :tangle micropypiapp.py
+  def load_wheels(
+      wheelhouse: pathlib.Path,
+  ) -> itertools.groupby[str, tuple[str, bytes, pathlib.Path]]:
+      wheels = itertools.groupby(
+          (
+              (normalize(extract_dist_name(w)), get_metadata(w), w)
+              for w in wheelhouse.glob("*.whl")
+          ),
+          key=operator.itemgetter(0),
+      )
+      return wheels
+#+end_src
+** プロジェクトごとにファイル情報をまとめる
+
+- プロジェクト名、メタデータ、wheelファイルパスをもとにJSONデータを作成
+
+#+begin_src python :tangle micropypiapp.py
+def load_projects(
+    wheelhouse: pathlib.Path,
+) -> tuple[ProjectList, dict[str, ProjectDetail]]:
+    meta = Meta({"api-version": "1.0"})
+
+    project_list = ProjectList(
+        {
+            "meta": meta,
+            "projects": [],
+        }
+    )
+
+    project_details: dict[str, ProjectDetail] = {}
+    for project_name, files in load_wheels(wheelhouse):
+        project = ProjectDetail({"name": project_name, "files": [], "meta": meta})
+        project_list["projects"].append(Project({"name": project_name}))
+        project_details[project_name] = project
+        for _, metadata, p in files:
+            f = ProjectFile(
+                {
+                    "filename": p.name,
+                    "url": f"{project_name}/files/{p.name}",
+                    "hashes": {
+                        "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
+                    },
+                    "dist-info-metadata": metadata.decode("utf-8"),
+                }
+            )
+            project["files"].append(f)
+    return project_list, project_details
+
+#+end_src
+
+** wsgiアプリケーション:project list
+#+begin_src python :tangle micropypiapp.py
+  class ProjectListApp:
+      def __init__(self, project_list: ProjectList) -> None:
+          self.project_list = project_list
+
+      def __call__(
+          self, environ: WSGIEnvironment, start_response: StartResponse
+      ) -> Iterable[bytes]:
+          start_response(
+              "200 OK", [("Content-Type", "application/vnd.pypi.simple.v1+json")]
+          )
+          return [json.dumps(self.project_list).encode("utf-8")]
+
+#+end_src
+** wsgiアプリケーション:project detail
+#+begin_src python :tangle micropypiapp.py
+  class ProjectDetailApp:
+      def __init__(self, project_details: dict[str, ProjectDetail]) -> None:
+          self.project_details = project_details
+
+      def __call__(
+          self, environ: WSGIEnvironment, start_response: StartResponse
+      ) -> Iterable[bytes]:
+          project_name = environ["wsgiorg.routing_args"][1]["project_name"]
+          if project_name not in self.project_details:
+              start_response(
+                  "404 Not Found",
+                  [("Content-Type", "application/vnd.pypi.simple.v1+json")],
+              )
+              return [b""]
+          start_response(
+              "200 OK", [("Content-Type", "application/vnd.pypi.simple.v1+json")]
+          )
+          return [json.dumps(self.project_details[project_name]).encode("utf-8")]
+
+#+end_src
+** wsgiアプリケーション:ダウンロード
 - wheelファイルの中身をレスポンスボディにする
 - wheelのcontent-typeは特に決まってないので ~application/octet-stream~ にする
 - ブラウザでアクセスしたときにダウンロードになるよう ~Content-Disposition~ をつける
-#+begin_src python
-      def get_data(self, whl: str) -> bytes:
-          with self.wheels[whl]["data"].open("br") as f:
-              return f.read()
+
+#+begin_src python :tangle micropypiapp.py
+  class WheelDownloadApp:
+      def __init__(self, wheelhouse: pathlib.Path) -> None:
+          self.wheelhouse = wheelhouse
+
+      def __call__(
+          self, environ: WSGIEnvironment, start_response: StartResponse
+      ) -> Iterable[bytes]:
+          file_name: str = environ["wsgiorg.routing_args"][1]["wheel_file_name"]
+          p = self.wheelhouse / file_name
+          if not p.exists():
+              start_response(
+                  "404 Not Found",
+                  [("Content-Type", "application/vnd.pypi.simple.v1+json")],
+              )
+              return [b""]
+          start_response(
+              "200 OK",
+              [
+                  ("Content-Type", "application/octed-stream"),
+                  ("Content-Disposition", f'attachment; filename="{file_name}"'),
+              ],
+          )
+          with p.open("rb") as f:
+              return f
 
 #+end_src
-#+begin_src python
-      def __call__(self, environ, start_response) -> Iterable[bytes]:
-          whl = environ["wsgiorg.routing_args"][1]["wheel_name"]
-          start_response("200 OK", [("Content-type", "application/octet-stream")])
-          return [self.repo.get_data(whl)]
+
+** WSGIアプリケーションのルーティング
+
+- wsgi.orgのドキュメントにルーティングのサンプルがあるので流用
+- https://wsgi.readthedocs.io/en/latest/specifications/routing_args.html
+#+begin_src python :tangle micropypiapp.py
+  class RegexDispatch(object):
+      def __init__(self, patterns: list[tuple[re.Pattern, WSGIApplication]]):
+          self.patterns = patterns
+
+      def __call__(
+          self, environ: WSGIEnvironment, start_response: StartResponse
+      ) -> Iterable[bytes]:
+          script_name: str = environ.get("SCRIPT_NAME", "")
+          path_info: str = environ.get("PATH_INFO", "")
+          for regex, application in self.patterns:
+              match = regex.match(path_info)
+              if not match:
+                  continue
+              extra_path_info = path_info[match.end() :]
+              if extra_path_info and not extra_path_info.startswith("/"):
+                  # Not a very good match
+                  continue
+              pos_args = match.groups()
+              named_args = match.groupdict()
+              cur_pos, cur_named = environ.get("wsgiorg.routing_args", ((), {}))
+              new_pos = list(cur_pos) + list(pos_args)
+              new_named = cur_named.copy()
+              new_named.update(named_args)
+              environ["wsgiorg.routing_args"] = (new_pos, new_named)
+              environ["SCRIPT_NAME"] = script_name + path_info[: match.end()]
+              environ["PATH_INFO"] = extra_path_info
+              return application(environ, start_response)
+          return self.not_found(environ, start_response)
+
+      def not_found(self, environ, start_response) -> Iterable[bytes]:
+          start_response("404 Not Found", [("Content-type", "text/plain")])
+          return [b"Not found"]
 
 #+end_src
+
+** simple repositoryの機能
+
+- ~/~ project list
+- ~/{project}~ project detail
+- 実際にwheelファイルをダウンロードするURL
+  - 今回は ~/{project}/files/{wheel}~ にします
+
+#+begin_src python :tangle micropypiapp.py
+  def make_app(wheelhouse: pathlib.Path) -> WSGIApplication:
+      (project_list, project_details) = load_projects(wheelhouse)
+      app: WSGIApplication = RegexDispatch(
+          [
+              (re.compile(r"^/$"), ProjectListApp(project_list)),
+              (
+                  re.compile(r"^/(?P<project_name>\w+)$"),
+                  ProjectDetailApp(project_details),
+              ),
+              (
+                  re.compile(
+                      r"^/(?P<project_name>\w+)/files/(?P<wheel_file_name>\w\.whl)$"
+                  ),
+                  ProjectDetailApp(project_details),
+              ),
+          ]
+      )
+      return app
+#+end_src
+
+** さあ!wsgiアプリケーションを立ち上げよう!
+- 重要なのはwheelファイルを置いてある ~wheelhouse~ ディレクトリ
+- ~host~, ~port~ はwebアプリケーションとして必要な情報
+
+#+begin_src python :tangle micropypiapp.py
+  def main() -> None:
+      parser = argparse.ArgumentParser()
+      parser.add_argument("wheelhouse", type=pathlib.Path)
+      parser.add_argument("--host", type=str, default="0.0.0.0")
+      parser.add_argument("--port", type=int, default=8000)
+      args = parser.parse_args()
+      app = make_app(args.wheelhouse)
+      httpd = make_server(args.host, args.port, app)
+      httpd.serve_forever()
+
+
+  if __name__ == "__main__":
+      main()
+#+end_src
+
 ** pipから使う
 
 - project list呼ばれてないかも？
@@ -323,11 +536,18 @@ representation
 #+begin_example
 $ pip install pyramid --index-url=http://localhost:8000/
 #+end_example
+* まとめ
+** まとめ
 
-** The Update Framework
-- TUF
+- パッケージの配布方法
+  - 広く一般に配布するなら pypi
+  - 狭い範囲で限られた利用のために配る
+    - http.server + find-links
+    - simple repository + index-url
+- simple repositoryはPEPで定義されている
+  - 配布する分には意外と簡単
+  - 標準ライブラリだけでも実装可能
 
-* 参考文献
 ** 参考文献
 - PyPA Simple Repository API, https://packaging.python.org/en/latest/specifications/simple-repository-api/
-- The Update Framework, https://theupdateframework.io/
+
