@@ -36,8 +36,11 @@
 ** パッケージエコシステム
 
 - 作る
+  - setuptools, poetry-core, hatchling...
 - 配る
+  - pypi
 - 使う
+  - pip, poetry, hatch...
 
 ** パッケージを配るということ
 
@@ -322,7 +325,7 @@ from wsgiref.simple_server import make_server
 #+begin_src python :tangle micropypiapp.py
   def load_wheels(
       wheelhouse: pathlib.Path,
-  ) -> itertools.groupby[str, tuple[str, bytes, pathlib.Path]]:
+  ) -> Iterable[tuple[str, Iterable[tuple[str, bytes, pathlib.Path]]]]:
       wheels = itertools.groupby(
           (
               (normalize(extract_dist_name(w)), get_metadata(w), w)
@@ -336,37 +339,50 @@ from wsgiref.simple_server import make_server
 
 - プロジェクト名、メタデータ、wheelファイルパスをもとにJSONデータを作成
 
-#+begin_src python :tangle micropypiapp.py
-def load_projects(
-    wheelhouse: pathlib.Path,
-) -> tuple[ProjectList, dict[str, ProjectDetail]]:
-    meta = Meta({"api-version": "1.0"})
 
-    project_list = ProjectList(
-        {
-            "meta": meta,
-            "projects": [],
-        }
-    )
+#+name: project-file-loop
+#+begin_src python
+  project = ProjectDetail(
+      {"name": project_name, "files": [], "meta": meta})
+  project_details[project_name] = project
+  for _, metadata, p in files:
+      hash = hashlib.sha256(p.read_bytes()).hexdigest()
+      f = ProjectFile(
+          {
+              "filename": p.name,
+              "url": f"/{project_name}/files/{p.name}",
+              "hashes": {
+                  "sha256": hash,
+              },
+              "dist-info-metadata": metadata.decode("utf-8"),
+          }
+      )
+      project["files"].append(f)
 
-    project_details: dict[str, ProjectDetail] = {}
-    for project_name, files in load_wheels(wheelhouse):
-        project = ProjectDetail({"name": project_name, "files": [], "meta": meta})
-        project_list["projects"].append(Project({"name": project_name}))
-        project_details[project_name] = project
-        for _, metadata, p in files:
-            f = ProjectFile(
-                {
-                    "filename": p.name,
-                    "url": f"{project_name}/files/{p.name}",
-                    "hashes": {
-                        "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
-                    },
-                    "dist-info-metadata": metadata.decode("utf-8"),
-                }
-            )
-            project["files"].append(f)
-    return project_list, project_details
+#+end_src
+#+name: loop
+#+begin_src python :noweb yes :exports none
+  for project_name, files in load_wheels(wheelhouse):
+    project_list["projects"].append(Project({"name": project_name}))
+    <<project-file-loop>>
+
+#+end_src
+#+begin_src python :tangle micropypiapp.py :noweb yes :export none
+  def load_projects(
+      wheelhouse: pathlib.Path,
+  ) -> tuple[ProjectList, dict[str, ProjectDetail]]:
+      meta = Meta({"api-version": "1.0"})
+
+      project_list = ProjectList(
+          {
+              "meta": meta,
+              "projects": [],
+          }
+      )
+
+      project_details: dict[str, ProjectDetail] = {}
+      <<loop>>
+      return project_list, project_details
 
 #+end_src
 
@@ -436,15 +452,44 @@ def load_projects(
               ],
           )
           with p.open("rb") as f:
-              return f
+              return [f.read()]
 
 #+end_src
 
+#+begin_src python :tangle micropypiapp.py
+  class WheelMetadataApp:
+      def __init__(self, project_details: dict[str, ProjectDetail]) -> None:
+          self.project_details = project_details
+
+      def __call__(
+          self, environ: WSGIEnvironment, start_response: StartResponse
+      ) -> Iterable[bytes]:
+          project_name = environ["wsgiorg.routing_args"][1]["project_name"]
+          file_name: str = environ["wsgiorg.routing_args"][1]["wheel_file_name"]
+          if project_name not in self.project_details:
+              start_response(
+                  "404 Not Found",
+                  [("Content-Type", "application/vnd.pypi.simple.v1+json")],
+              )
+              return [b""]
+          start_response(
+              "200 OK", [("Content-Type", "application/vnd.pypi.simple.v1+json")]
+          )
+          return [f["dist-info-metadata"].encode("utf-8")
+                  for f in self.project_details[project_name]["files"]
+                  if f["filename"] == file_name]
+
+#+end_src
+
+
 ** WSGIアプリケーションのルーティング
 
-- wsgi.orgのドキュメントにルーティングのサンプルがあるので流用
-- https://wsgi.readthedocs.io/en/latest/specifications/routing_args.html
-#+begin_src python :tangle micropypiapp.py
+- ~/~ project list
+- ~/{project}/~ project detail
+- 実際にwheelファイルをダウンロードするURL
+  - 今回は ~/{project}/files/{wheel}~ にします
+
+#+begin_src python :tangle micropypiapp.py :exports none
   class RegexDispatch(object):
       def __init__(self, patterns: list[tuple[re.Pattern, WSGIApplication]]):
           self.patterns = patterns
@@ -479,30 +524,32 @@ def load_projects(
           return [b"Not found"]
 
 #+end_src
-
-** simple repositoryの機能
-
-- ~/~ project list
-- ~/{project}~ project detail
-- 実際にwheelファイルをダウンロードするURL
-  - 今回は ~/{project}/files/{wheel}~ にします
-
-#+begin_src python :tangle micropypiapp.py
+#+name: routing
+#+begin_src python
+  (re.compile(r"^/$"), ProjectListApp(project_list)),
+  (
+      re.compile(r"^/(?P<project_name>[^/]+)/$"),
+      ProjectDetailApp(project_details),
+  ),
+  (
+      re.compile(
+          r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)$"
+      ),
+      WheelDownloadApp(wheelhouse),
+  ),
+  (
+      re.compile(
+          r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)\.metadata$"
+      ),
+      WheelMetadataApp(project_details),
+  ),
+#+end_src
+#+begin_src python :tangle micropypiapp.py :export none :noweb yes
   def make_app(wheelhouse: pathlib.Path) -> WSGIApplication:
       (project_list, project_details) = load_projects(wheelhouse)
       app: WSGIApplication = RegexDispatch(
           [
-              (re.compile(r"^/$"), ProjectListApp(project_list)),
-              (
-                  re.compile(r"^/(?P<project_name>\w+)$"),
-                  ProjectDetailApp(project_details),
-              ),
-              (
-                  re.compile(
-                      r"^/(?P<project_name>\w+)/files/(?P<wheel_file_name>\w\.whl)$"
-                  ),
-                  ProjectDetailApp(project_details),
-              ),
+              <<routing>>
           ]
       )
       return app
@@ -550,4 +597,5 @@ $ pip install pyramid --index-url=http://localhost:8000/
 
 ** 参考文献
 - PyPA Simple Repository API, https://packaging.python.org/en/latest/specifications/simple-repository-api/
-
+- The Python Package Index, https://github.com/pypi/warehouse
+- Welcome to Warehouse's documentation!, https://warehouse.pypa.io/
