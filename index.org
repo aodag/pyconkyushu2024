@@ -166,11 +166,6 @@ representation
 - 1ファイルデプロイ
 - DBなどを使わず起動するだけで使える
 
-** 標準ライブラリでwebアプリケーションを書く
-
-- json
-- wsgiref
-
 ** project list
 
 - ホストしているプロジェクト(ほぼパッケージの意味)を一覧で出すだけ
@@ -228,6 +223,7 @@ from wsgiref.simple_server import make_server
           "hashes": dict[str, str],
           "requires-python": NotRequired[str],
           "dist-info-metadata": NotRequired[str],
+          "core-metadata": NotRequired[str],
           "gpg-sig": NotRequired[bool],
           "yanked": NotRequired[bool],
       },
@@ -355,6 +351,7 @@ from wsgiref.simple_server import make_server
                   "sha256": hash,
               },
               "dist-info-metadata": metadata.decode("utf-8"),
+              "core-metadata": metadata.decode("utf-8"),
           }
       )
       project["files"].append(f)
@@ -367,7 +364,7 @@ from wsgiref.simple_server import make_server
     <<project-file-loop>>
 
 #+end_src
-#+begin_src python :tangle micropypiapp.py :noweb yes :export none
+#+begin_src python :tangle micropypiapp.py :noweb yes :exports none
   def load_projects(
       wheelhouse: pathlib.Path,
   ) -> tuple[ProjectList, dict[str, ProjectDetail]]:
@@ -412,11 +409,7 @@ from wsgiref.simple_server import make_server
       ) -> Iterable[bytes]:
           project_name = environ["wsgiorg.routing_args"][1]["project_name"]
           if project_name not in self.project_details:
-              start_response(
-                  "404 Not Found",
-                  [("Content-Type", "application/vnd.pypi.simple.v1+json")],
-              )
-              return [b""]
+              return not_found(environ, start_response)
           start_response(
               "200 OK", [("Content-Type", "application/vnd.pypi.simple.v1+json")]
           )
@@ -439,11 +432,7 @@ from wsgiref.simple_server import make_server
           file_name: str = environ["wsgiorg.routing_args"][1]["wheel_file_name"]
           p = self.wheelhouse / file_name
           if not p.exists():
-              start_response(
-                  "404 Not Found",
-                  [("Content-Type", "application/vnd.pypi.simple.v1+json")],
-              )
-              return [b""]
+              return not_found(environ, start_response)
           start_response(
               "200 OK",
               [
@@ -467,15 +456,11 @@ from wsgiref.simple_server import make_server
           project_name = environ["wsgiorg.routing_args"][1]["project_name"]
           file_name: str = environ["wsgiorg.routing_args"][1]["wheel_file_name"]
           if project_name not in self.project_details:
-              start_response(
-                  "404 Not Found",
-                  [("Content-Type", "application/vnd.pypi.simple.v1+json")],
-              )
-              return [b""]
+              return not_found(environ, start_response)
           start_response(
               "200 OK", [("Content-Type", "application/vnd.pypi.simple.v1+json")]
           )
-          return [f["dist-info-metadata"].encode("utf-8")
+          return [f["core-metadata"].encode("utf-8")
                   for f in self.project_details[project_name]["files"]
                   if f["filename"] == file_name]
 
@@ -488,6 +473,7 @@ from wsgiref.simple_server import make_server
 - ~/{project}/~ project detail
 - 実際にwheelファイルをダウンロードするURL
   - 今回は ~/{project}/files/{wheel}~ にします
+  - メタデータを ~/{project}/files/{wheel}.metadata~ にします
 
 #+begin_src python :tangle micropypiapp.py :exports none
   class RegexDispatch(object):
@@ -517,34 +503,52 @@ from wsgiref.simple_server import make_server
               environ["SCRIPT_NAME"] = script_name + path_info[: match.end()]
               environ["PATH_INFO"] = extra_path_info
               return application(environ, start_response)
-          return self.not_found(environ, start_response)
+          return not_found(environ, start_response)
 
-      def not_found(self, environ, start_response) -> Iterable[bytes]:
-          start_response("404 Not Found", [("Content-type", "text/plain")])
-          return [b"Not found"]
+  def not_found(environ, start_response) -> Iterable[bytes]:
+      start_response("404 Not Found", [("Content-type", "text/plain")])
+      return [b"Not found"]
 
 #+end_src
-#+name: routing
+
+#+name: routing-project-list
 #+begin_src python
-  (re.compile(r"^/$"), ProjectListApp(project_list)),
+  r"^/$"
+#+end_src
+
+#+name: routing-project-details
+#+begin_src python 
+  r"^/(?P<project_name>[^/]+)/$"
+#+end_src
+#+name: routing-wheel
+#+begin_src python
+  r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)$"
+#+end_src
+#+name: routing-metadata
+#+begin_src python
+  r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)\.metadata$"
+#+end_src
+#+name: routing
+#+begin_src python :noweb yes :exports none
+  (re.compile(<<routing-project-list>>), ProjectListApp(project_list)),
   (
-      re.compile(r"^/(?P<project_name>[^/]+)/$"),
+      re.compile(<<routing-project-details>>),
       ProjectDetailApp(project_details),
   ),
   (
       re.compile(
-          r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)$"
+          <<routing-wheel>>
       ),
       WheelDownloadApp(wheelhouse),
   ),
   (
       re.compile(
-          r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)\.metadata$"
+          <<routing-metadata>>
       ),
       WheelMetadataApp(project_details),
   ),
 #+end_src
-#+begin_src python :tangle micropypiapp.py :export none :noweb yes
+#+begin_src python :tangle micropypiapp.py :exports none :noweb yes
   def make_app(wheelhouse: pathlib.Path) -> WSGIApplication:
       (project_list, project_details) = load_projects(wheelhouse)
       app: WSGIApplication = RegexDispatch(
@@ -575,14 +579,6 @@ from wsgiref.simple_server import make_server
       main()
 #+end_src
 
-** pipから使う
-
-- project list呼ばれてないかも？
-
-
-#+begin_example
-$ pip install pyramid --index-url=http://localhost:8000/
-#+end_example
 * まとめ
 ** まとめ
 

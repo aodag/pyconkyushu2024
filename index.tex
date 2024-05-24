@@ -1,4 +1,4 @@
-% Created 2024-05-24 Fri 17:57
+% Created 2024-05-25 Sat 00:56
 % Intended LaTeX compiler: pdflatex
 \documentclass[presentation]{beamer}
 \usepackage{luatexja}
@@ -25,8 +25,8 @@
 \end{frame}
 
 \section{パッケージを配ろう}
-\label{sec:org76ff320}
-\begin{frame}[label={sec:org693fcb1}]{お前誰よ}
+\label{sec:orga822f6b}
+\begin{frame}[label={sec:org0cd3f78}]{お前誰よ}
 \begin{block}{}
 \begin{itemize}
 \item Atsushi Odagiri
@@ -49,8 +49,8 @@
 \end{block}
 \end{frame}
 \section{パッケージを配るということ}
-\label{sec:org0b51bb1}
-\begin{frame}[label={sec:orga405f98}]{パッケージエコシステム}
+\label{sec:orgd02eb6e}
+\begin{frame}[label={sec:org066548e}]{パッケージエコシステム}
 \begin{itemize}
 \item 作る
 \begin{itemize}
@@ -67,14 +67,14 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgcb2999f}]{パッケージを配るということ}
+\begin{frame}[label={sec:org27c0b02}]{パッケージを配るということ}
 \begin{itemize}
 \item 広く一般に向けて配る
 \item 狭い範囲で限られた利用のために配る
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgf45f7e7},fragile]{広く一般に向けてpypiで配る}
+\begin{frame}[label={sec:orgffd0b97},fragile]{広く一般に向けてpypiで配る}
  \begin{itemize}
 \item PyPAツールのデフォルト
 \item \texttt{tween} でアップロード
@@ -82,14 +82,14 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgd4df995}]{狭い範囲で限られた利用のために配る}
+\begin{frame}[label={sec:orga95feed}]{狭い範囲で限られた利用のために配る}
 \begin{itemize}
 \item マイクロサービスのそれぞれて使うようなライブラリ
 \item 特殊なパッチをあてたローカルフレーバーライブラリ
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:org30b2d02}]{狭い範囲で配る}
+\begin{frame}[label={sec:org90e28cf}]{狭い範囲で配る}
 \begin{itemize}
 \item 社内ネットワークやVPNの中で
 \item k8sやvpcの中で
@@ -98,7 +98,7 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgc64ebb0},fragile]{httplib.server でのお手軽repository}
+\begin{frame}[label={sec:orgaeeec69},fragile]{httplib.server でのお手軽repository}
  \begin{itemize}
 \item ダウンロードできるリンクがあればいいので \texttt{http} モジュールでサーバーを起動するだけ
 \item wheelファイルのあるディレクトリで実行
@@ -114,7 +114,7 @@ python3 -m http.server
 \end{center}
 \end{frame}
 
-\begin{frame}[label={sec:org97bbcfa},fragile]{URL指定でインストール}
+\begin{frame}[label={sec:orgee389c8},fragile]{URL指定でインストール}
  \begin{itemize}
 \item pipはURL指定で直接インストールできる
 \item 正確なファイル名を知らないといけない
@@ -127,7 +127,7 @@ pip install \
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:orgc1d5488},fragile]{複雑なwheelファイル名}
+\begin{frame}[label={sec:org0c1f420},fragile]{複雑なwheelファイル名}
  \begin{itemize}
 \item oh\ldots{}
 \end{itemize}
@@ -139,7 +139,7 @@ zope.interface-6.4
 .whl
 \end{verbatim}
 \end{frame}
-\begin{frame}[label={sec:org1f55e23},fragile]{find-links}
+\begin{frame}[label={sec:org75cef17},fragile]{find-links}
  \begin{itemize}
 \item \texttt{find-links} で指定した場所から探しだしてもらう
 \end{itemize}
@@ -148,7 +148,7 @@ pip install -f http://localhost:8000 zope.interface
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:org4a53057},fragile]{no-index}
+\begin{frame}[label={sec:org9ebe70a},fragile]{no-index}
  \begin{itemize}
 \item 場合によってはpypiへの接続も制限される環境
 \item 全てをお手軽repositoryから取得するなら \texttt{no-index} も使うようにしてみよう
@@ -158,7 +158,7 @@ pip install -f http://localhost:8000 zope.interface
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgfb6905e},fragile]{indexは必要？}
+\begin{frame}[label={sec:org0ddf2cc},fragile]{indexは必要？}
  \begin{itemize}
 \item pipを直接使うなら \texttt{find-url} でもいいかも？
 \item メタデータを取得するのに配布物をダウンロードするという効率の悪さはある
@@ -169,7 +169,7 @@ pip install -f http://localhost:8000 zope.interface
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:org028b384},fragile]{独自のpypiを立てたい!}
+\begin{frame}[label={sec:orga61eb83},fragile]{独自のpypiを立てたい!}
  \begin{itemize}
 \item PyPI自体のソースコードは公開されている
 \begin{itemize}
@@ -187,8 +187,8 @@ pip install -f http://localhost:8000 zope.interface
 \end{frame}
 
 \section{パッケージを配るためのPEP}
-\label{sec:org07f6a7c}
-\begin{frame}[label={sec:org36d844a}]{パッケージを配るためのPEP}
+\label{sec:org923eb89}
+\begin{frame}[label={sec:org8cc8124}]{パッケージを配るためのPEP}
 \begin{itemize}
 \item \href{https://peps.python.org/pep-0458}{PEP 458 – Secure PyPI downloads with signed repository metadata}
 \item \href{https://peps.python.org/pep-0480}{PEP 480 – Surviving a Compromise of PyPI: End-to-end signing of packages}
@@ -202,7 +202,7 @@ pip install -f http://localhost:8000 zope.interface
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orga5606b5}]{Simple Repository}
+\begin{frame}[label={sec:orgb009032}]{Simple Repository}
 representation
 
 \begin{itemize}
@@ -221,14 +221,14 @@ representation
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgd71f03a}]{PyPIのSimple Repository}
+\begin{frame}[label={sec:org454fec4}]{PyPIのSimple Repository}
 \begin{itemize}
 \item \url{https://pypi.org/simple/} とても大きいのでアクセス注意！
 \end{itemize}
 \end{frame}
 
 
-\begin{frame}[label={sec:orga0cbf99}]{実装方針}
+\begin{frame}[label={sec:org1f35537}]{実装方針}
 \begin{itemize}
 \item 標準ライブラリでいこう
 \begin{itemize}
@@ -239,21 +239,14 @@ representation
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgfa31f24}]{標準ライブラリでwebアプリケーションを書く}
-\begin{itemize}
-\item json
-\item wsgiref
-\end{itemize}
-\end{frame}
-
-\begin{frame}[label={sec:orgf5ee2dd},fragile]{project list}
+\begin{frame}[label={sec:org16c942e},fragile]{project list}
  \begin{itemize}
 \item ホストしているプロジェクト(ほぼパッケージの意味)を一覧で出すだけ
 \item v1.0のプロジェクトに関する情報は \texttt{name} のみ
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:org9d0bc8c},fragile]{使うライブラリ}
+\begin{frame}[label={sec:org0c71370},fragile]{使うライブラリ}
  \begin{itemize}
 \item これだけ!
 \item 100\% 標準ライブラリのみ!
@@ -274,7 +267,7 @@ from wsgiref.simple_server import make_server
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:orgdd30b84},fragile]{Meta}
+\begin{frame}[label={sec:orgbe197a8},fragile]{Meta}
  \begin{itemize}
 \item simple repositoryに関する情報
 \item バージョン
@@ -290,14 +283,14 @@ Meta = TypedDict(
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:orgd971e48}]{project detail}
+\begin{frame}[label={sec:orgba4742a}]{project detail}
 \begin{itemize}
 \item プロジェクト(パッケージ)ごとのダウンロード可能なファイル一覧
 \item ファイルのURLやパッケージメタデータなど
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgb509114},fragile]{project fileのtyping}
+\begin{frame}[label={sec:orgb7db610},fragile]{project fileのtyping}
  \begin{itemize}
 \item 事前に確認可能なパッケージメタデータ
 \item ダウンロードに必要な情報 URLやハッシュ
@@ -312,6 +305,7 @@ ProjectFile = TypedDict(
         "hashes": dict[str, str],
         "requires-python": NotRequired[str],
         "dist-info-metadata": NotRequired[str],
+        "core-metadata": NotRequired[str],
         "gpg-sig": NotRequired[bool],
         "yanked": NotRequired[bool],
     },
@@ -320,7 +314,7 @@ ProjectFile = TypedDict(
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:org7cb014b},fragile]{project detailのtyping}
+\begin{frame}[label={sec:org7f1880d},fragile]{project detailのtyping}
  \begin{itemize}
 \item project fileの一覧が主な情報
 \end{itemize}
@@ -338,7 +332,7 @@ ProjectDetail = TypedDict(
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:orgb84414c},fragile]{project list のtyping}
+\begin{frame}[label={sec:org3a3daab},fragile]{project list のtyping}
  \begin{verbatim}
 Project = TypedDict("Project", {"name": str})
 ProjectList = TypedDict(
@@ -352,7 +346,7 @@ ProjectList = TypedDict(
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:org4f72148},fragile]{wheelファイルを探しだす}
+\begin{frame}[label={sec:org97ac171},fragile]{wheelファイルを探しだす}
  \begin{itemize}
 \item pathlibでできちゃうね!
 \end{itemize}
@@ -362,7 +356,7 @@ wheelhouse.glob("*.whl")
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:org1f98f27},fragile]{wheelファイル名から情報を取得}
+\begin{frame}[label={sec:orgf90c176},fragile]{wheelファイル名から情報を取得}
  \begin{itemize}
 \item wheelファイルのファイル名は形式が決まっている
 \begin{itemize}
@@ -372,7 +366,7 @@ wheelhouse.glob("*.whl")
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:org5baf81e},fragile]{wheelファイル名から情報を取得}
+\begin{frame}[label={sec:org5db28e2},fragile]{wheelファイル名から情報を取得}
  \begin{itemize}
 \item 今回欲しいのは \texttt{distiribution}
 \item \texttt{"-"} で \texttt{split} して最初の1つ
@@ -384,7 +378,7 @@ def extract_dist_name(wh: pathlib.Path) -> str:
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:org1527a9a},fragile]{プロジェクト名を正規化}
+\begin{frame}[label={sec:org6e3a687},fragile]{プロジェクト名を正規化}
  \begin{itemize}
 \item PEP 503 で正式に正規化方法が定義されている
 \item アルファベットは全て小文字
@@ -398,7 +392,7 @@ def normalize(name: str) -> str:
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:org2054611},fragile]{metadata}
+\begin{frame}[label={sec:org279f822},fragile]{metadata}
  \begin{itemize}
 \item METADATAをwheelから取り出す
 \item wheelはzipファイル
@@ -421,7 +415,7 @@ def get_metadata(whl: pathlib.Path):
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:org627dfab},fragile]{全部まとめてwheelファイルの情報を取得}
+\begin{frame}[label={sec:orga95bf74},fragile]{全部まとめてwheelファイルの情報を取得}
  \begin{itemize}
 \item プロジェクト名をキーにしてメタデータとwheelファイルパスをグルーピング
 \end{itemize}
@@ -440,7 +434,7 @@ def load_wheels(
     return wheels
 \end{verbatim}
 \end{frame}
-\begin{frame}[label={sec:org19bfd7a},fragile]{プロジェクトごとにファイル情報をまとめる}
+\begin{frame}[label={sec:org8c52c06},fragile]{プロジェクトごとにファイル情報をまとめる}
  \begin{itemize}
 \item プロジェクト名、メタデータ、wheelファイルパスをもとにJSONデータを作成
 \end{itemize}
@@ -460,51 +454,14 @@ for _, metadata, p in files:
                 "sha256": hash,
             },
             "dist-info-metadata": metadata.decode("utf-8"),
+            "core-metadata": metadata.decode("utf-8"),
         }
     )
     project["files"].append(f)
 
 \end{verbatim}
-\begin{verbatim}
-def load_projects(
-    wheelhouse: pathlib.Path,
-) -> tuple[ProjectList, dict[str, ProjectDetail]]:
-    meta = Meta({"api-version": "1.0"})
-
-    project_list = ProjectList(
-        {
-            "meta": meta,
-            "projects": [],
-        }
-    )
-
-    project_details: dict[str, ProjectDetail] = {}
-    for project_name, files in load_wheels(wheelhouse):
-      project_list["projects"].append(Project({"name": project_name}))
-      project = ProjectDetail(
-          {"name": project_name, "files": [], "meta": meta})
-      project_details[project_name] = project
-      for _, metadata, p in files:
-          hash = hashlib.sha256(p.read_bytes()).hexdigest()
-          f = ProjectFile(
-              {
-                  "filename": p.name,
-                  "url": f"/{project_name}/files/{p.name}",
-                  "hashes": {
-                      "sha256": hash,
-                  },
-                  "dist-info-metadata": metadata.decode("utf-8"),
-              }
-          )
-          project["files"].append(f)
-
-
-    return project_list, project_details
-
-\end{verbatim}
 \end{frame}
-
-\begin{frame}[label={sec:orgbb8961a},fragile]{wsgiアプリケーション:project list}
+\begin{frame}[label={sec:org7132cbb},fragile]{wsgiアプリケーション:project list}
  \begin{verbatim}
 class ProjectListApp:
     def __init__(self, project_list: ProjectList) -> None:
@@ -520,7 +477,7 @@ class ProjectListApp:
 
 \end{verbatim}
 \end{frame}
-\begin{frame}[label={sec:orgfd5cb74},fragile]{wsgiアプリケーション:project detail}
+\begin{frame}[label={sec:org78b288f},fragile]{wsgiアプリケーション:project detail}
  \begin{verbatim}
 class ProjectDetailApp:
     def __init__(self, project_details: dict[str, ProjectDetail]) -> None:
@@ -531,11 +488,7 @@ class ProjectDetailApp:
     ) -> Iterable[bytes]:
         project_name = environ["wsgiorg.routing_args"][1]["project_name"]
         if project_name not in self.project_details:
-            start_response(
-                "404 Not Found",
-                [("Content-Type", "application/vnd.pypi.simple.v1+json")],
-            )
-            return [b""]
+            return not_found(environ, start_response)
         start_response(
             "200 OK", [("Content-Type", "application/vnd.pypi.simple.v1+json")]
         )
@@ -543,7 +496,7 @@ class ProjectDetailApp:
 
 \end{verbatim}
 \end{frame}
-\begin{frame}[label={sec:org610f531},fragile]{wsgiアプリケーション:ダウンロード}
+\begin{frame}[label={sec:org089fa95},fragile]{wsgiアプリケーション:ダウンロード}
  \begin{itemize}
 \item wheelファイルの中身をレスポンスボディにする
 \item wheelのcontent-typeは特に決まってないので \texttt{application/octet-stream} にする
@@ -561,11 +514,7 @@ class WheelDownloadApp:
         file_name: str = environ["wsgiorg.routing_args"][1]["wheel_file_name"]
         p = self.wheelhouse / file_name
         if not p.exists():
-            start_response(
-                "404 Not Found",
-                [("Content-Type", "application/vnd.pypi.simple.v1+json")],
-            )
-            return [b""]
+            return not_found(environ, start_response)
         start_response(
             "200 OK",
             [
@@ -589,15 +538,11 @@ class WheelMetadataApp:
         project_name = environ["wsgiorg.routing_args"][1]["project_name"]
         file_name: str = environ["wsgiorg.routing_args"][1]["wheel_file_name"]
         if project_name not in self.project_details:
-            start_response(
-                "404 Not Found",
-                [("Content-Type", "application/vnd.pypi.simple.v1+json")],
-            )
-            return [b""]
+            return not_found(environ, start_response)
         start_response(
             "200 OK", [("Content-Type", "application/vnd.pypi.simple.v1+json")]
         )
-        return [f["dist-info-metadata"].encode("utf-8")
+        return [f["core-metadata"].encode("utf-8")
                 for f in self.project_details[project_name]["files"]
                 if f["filename"] == file_name]
 
@@ -605,64 +550,32 @@ class WheelMetadataApp:
 \end{frame}
 
 
-\begin{frame}[label={sec:orga0a9732},fragile]{WSGIアプリケーションのルーティング}
+\begin{frame}[label={sec:org293c566},fragile]{WSGIアプリケーションのルーティング}
  \begin{itemize}
 \item \texttt{/} project list
 \item \texttt{/\{project\}/} project detail
 \item 実際にwheelファイルをダウンロードするURL
 \begin{itemize}
 \item 今回は \texttt{/\{project\}/files/\{wheel\}} にします
+\item メタデータを \texttt{/\{project\}/files/\{wheel\}.metadata} にします
 \end{itemize}
 \end{itemize}
 
 \begin{verbatim}
-(re.compile(r"^/$"), ProjectListApp(project_list)),
-(
-    re.compile(r"^/(?P<project_name>[^/]+)/$"),
-    ProjectDetailApp(project_details),
-),
-(
-    re.compile(
-        r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)$"
-    ),
-    WheelDownloadApp(wheelhouse),
-),
-(
-    re.compile(
-        r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)\.metadata$"
-    ),
-    WheelMetadataApp(project_details),
-),
+r"^/$"
+\end{verbatim}
+
+\begin{verbatim}
+r"^/(?P<project_name>[^/]+)/$"
 \end{verbatim}
 \begin{verbatim}
-def make_app(wheelhouse: pathlib.Path) -> WSGIApplication:
-    (project_list, project_details) = load_projects(wheelhouse)
-    app: WSGIApplication = RegexDispatch(
-        [
-            (re.compile(r"^/$"), ProjectListApp(project_list)),
-            (
-                re.compile(r"^/(?P<project_name>[^/]+)/$"),
-                ProjectDetailApp(project_details),
-            ),
-            (
-                re.compile(
-                    r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)$"
-                ),
-                WheelDownloadApp(wheelhouse),
-            ),
-            (
-                re.compile(
-                    r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)\.metadata$"
-                ),
-                WheelMetadataApp(project_details),
-            ),
-        ]
-    )
-    return app
+r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)$"
+\end{verbatim}
+\begin{verbatim}
+r"^/(?P<project_name>[^/]+)/files/(?P<wheel_file_name>[^/]+\.whl)\.metadata$"
 \end{verbatim}
 \end{frame}
-
-\begin{frame}[label={sec:org1e0f478},fragile]{さあ!wsgiアプリケーションを立ち上げよう!}
+\begin{frame}[label={sec:orgc8a28c7},fragile]{さあ!wsgiアプリケーションを立ち上げよう!}
  \begin{itemize}
 \item 重要なのはwheelファイルを置いてある \texttt{wheelhouse} ディレクトリ
 \item \texttt{host}, \texttt{port} はwebアプリケーションとして必要な情報
@@ -685,19 +598,9 @@ if __name__ == "__main__":
 \end{verbatim}
 \end{frame}
 
-\begin{frame}[label={sec:orgc62eb9d},fragile]{pipから使う}
- \begin{itemize}
-\item project list呼ばれてないかも？
-\end{itemize}
-
-
-\begin{verbatim}
-$ pip install pyramid --index-url=http://localhost:8000/
-\end{verbatim}
-\end{frame}
 \section{まとめ}
-\label{sec:org08d645f}
-\begin{frame}[label={sec:org4f183bb}]{まとめ}
+\label{sec:orgd77eaa2}
+\begin{frame}[label={sec:org4b3ae91}]{まとめ}
 \begin{itemize}
 \item パッケージの配布方法
 \begin{itemize}
@@ -716,7 +619,7 @@ $ pip install pyramid --index-url=http://localhost:8000/
 \end{itemize}
 \end{frame}
 
-\begin{frame}[label={sec:orgcd55aa7}]{参考文献}
+\begin{frame}[label={sec:org9f790a3}]{参考文献}
 \begin{itemize}
 \item PyPA Simple Repository API, \url{https://packaging.python.org/en/latest/specifications/simple-repository-api/}
 \item The Python Package Index, \url{https://github.com/pypi/warehouse}
