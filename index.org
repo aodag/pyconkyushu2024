@@ -224,8 +224,8 @@ from wsgiref.simple_server import make_server
           "url": str,
           "hashes": dict[str, str],
           "requires-python": NotRequired[str],
-          "dist-info-metadata": NotRequired[str],
-          "core-metadata": NotRequired[str],
+          "dist-info-metadata": NotRequired[bool],
+          "core-metadata": NotRequired[bool],
           "gpg-sig": NotRequired[bool],
           "yanked": NotRequired[bool],
       },
@@ -352,8 +352,8 @@ from wsgiref.simple_server import make_server
               "hashes": {
                   "sha256": hash,
               },
-              "dist-info-metadata": metadata.decode("utf-8"),
-              "core-metadata": metadata.decode("utf-8"),
+              "dist-info-metadata": True,
+              "core-metadata": True,
           }
       )
       project["files"].append(f)
@@ -449,23 +449,23 @@ from wsgiref.simple_server import make_server
 
 #+begin_src python :tangle micropypiapp.py
   class WheelMetadataApp:
-      def __init__(self, project_details: dict[str, ProjectDetail]) -> None:
-          self.project_details = project_details
+      def __init__(self, wheelhouse: pathlib.Path) -> None:
+          self.wheelhouse = wheelhouse
 
       def __call__(
           self, environ: WSGIEnvironment, start_response: StartResponse
       ) -> Iterable[bytes]:
-          project_name = environ["wsgiorg.routing_args"][1]["project_name"]
           file_name: str = environ["wsgiorg.routing_args"][1]["wheel_file_name"]
-          if project_name not in self.project_details:
+          p = self.wheelhouse / file_name
+          if not p.exists():
               return not_found(environ, start_response)
           start_response(
-              "200 OK", [("Content-Type", "application/vnd.pypi.simple.v1+json")]
+              "200 OK",
+              [
+                  ("Content-Type", "texa/plain"),
+              ],
           )
-          return [f["core-metadata"].encode("utf-8")
-                  for f in self.project_details[project_name]["files"]
-                  if f["filename"] == file_name]
-
+          return [get_metadata(p)]
 #+end_src
 
 
@@ -547,7 +547,7 @@ from wsgiref.simple_server import make_server
       re.compile(
           <<routing-metadata>>
       ),
-      WheelMetadataApp(project_details),
+      WheelMetadataApp(wheelhouse),
   ),
 #+end_src
 #+begin_src python :tangle micropypiapp.py :exports none :noweb yes
