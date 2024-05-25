@@ -1,4 +1,5 @@
 #+title: パッケージを配ろう
+#+subtitle: pycon九州2024
 #+author: Atsushi Odagiri
 #+DATE: 2024-04-25
 #+BEAMER_THEME: Madrid
@@ -8,6 +9,7 @@
 #+LaTeX_CLASS: beamer
 #+LaTeX_HEADER: \usepackage{luatexja}
 #+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
+
 * パッケージを配ろう
 ** お前誰よ
 ***  
