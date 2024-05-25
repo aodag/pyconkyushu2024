@@ -7,6 +7,7 @@
 #+OPTIONS: H:2 toc:t num:t
 #+OPTIONS: ^:{}
 #+LaTeX_CLASS: beamer
+#+LATEX_CLASS_OPTIONS: [aspectratio=169]
 #+LaTeX_HEADER: \usepackage{luatexja}
 #+COLUMNS: %45ITEM %10BEAMER_ENV(Env) %10BEAMER_ACT(Act) %4BEAMER_COL(Col)
 
