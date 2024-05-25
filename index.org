@@ -2,8 +2,8 @@
 #+subtitle: pycon九州2024
 #+author: Atsushi Odagiri
 #+DATE: 2024-04-25
-#+BEAMER_THEME: Madrid
-#+BEAMER_COLOR_THEME: beetle
+#+BEAMER_THEME: Boadilla
+#+BEAMER_COLOR_THEME: seahorse
 #+OPTIONS: H:2 toc:t num:t
 #+OPTIONS: ^:{}
 #+LaTeX_CLASS: beamer
